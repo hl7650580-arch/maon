@@ -30,8 +30,12 @@ export default function PhotoPermissionSelect({
     setSaving(true);
     setEditing(false);
     try {
-      await updatePhotoPermission(residentId, newVal || null);
-      setValue(newVal || null);
+      const result = await updatePhotoPermission(residentId, newVal || null);
+      if (!result) {
+        alert(`שגיאה: לא נמצא דייר עם ID ${residentId}`);
+        return;
+      }
+      setValue(result.photo_permission);
       router.refresh();
     } catch (e: any) {
       alert('שגיאה בשמירה: ' + e.message);

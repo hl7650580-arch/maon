@@ -292,6 +292,10 @@ export async function deleteFunctionalReport(id: number, residentId: number) {
 // ─── PHOTO PERMISSION ─────────────────────────────────────────────────────────
 
 export async function updatePhotoPermission(residentId: number, permission: string | null) {
-  await sql`UPDATE residents SET photo_permission = ${permission} WHERE id = ${residentId}`;
+  const rows = await sql`
+    UPDATE residents SET photo_permission = ${permission} WHERE id = ${residentId}
+    RETURNING id, photo_permission
+  `;
   revalidatePath('/photos');
+  return rows[0] as { id: number; photo_permission: string | null } | undefined;
 }
