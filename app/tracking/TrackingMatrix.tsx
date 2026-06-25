@@ -16,16 +16,6 @@ interface Row {
   risk_management: string | null;
   conversation: string | null;
   photo: string | null;
-  photo_permission: string | null;
-}
-
-const PHOTO_PERMISSION_OPTIONS = ['פנימי', 'חיצוני', 'אין אישור'];
-
-function permissionBg(val: string | null) {
-  if (val === 'פנימי')    return 'bg-blue-100 text-blue-700';
-  if (val === 'חיצוני')   return 'bg-green-100 text-green-700';
-  if (val === 'אין אישור') return 'bg-red-100 text-red-700';
-  return 'bg-gray-100 text-gray-400';
 }
 
 const COLUMNS = [
@@ -59,7 +49,6 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
   const [notes, setNotes] = useState('');
   const [filterGroup, setFilterGroup] = useState('');
   const [isPending, setIsPending] = useState(false);
-  const [permissionEdit, setPermissionEdit] = useState<number | null>(null);
   const router = useRouter();
 
   const groups = Array.from(new Set(rows.map((r) => r.housing_group).filter(Boolean))).sort();
@@ -227,7 +216,6 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
                   {col.label}
                 </th>
               ))}
-              <th className="text-center px-3 py-3 font-medium text-gray-600 min-w-28 bg-gray-50">אישור צילום</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -282,40 +270,6 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
                     </td>
                   );
                 })}
-                {/* Photo permission */}
-                <td className="px-2 py-1.5 text-center">
-                  {permissionEdit === r.id ? (
-                    <select
-                      autoFocus
-                      defaultValue={r.photo_permission || ''}
-                      onBlur={() => setPermissionEdit(null)}
-                      onChange={async (e) => {
-                        const val = e.target.value;
-                        setPermissionEdit(null);
-                        await fetch(`/api/residents/${r.id}/photo-permission`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ photo_permission: val || null }),
-                        });
-                        window.location.href = '/tracking?t=' + Date.now();
-                      }}
-                      className="border border-gray-300 rounded px-1 py-1 text-xs w-full"
-                    >
-                      <option value="">-- בחר --</option>
-                      {PHOTO_PERMISSION_OPTIONS.map((o) => (
-                        <option key={o} value={o}>{o}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <button
-                      onClick={() => setPermissionEdit(r.id)}
-                      className={`w-full rounded-lg py-2 px-1 text-xs font-medium transition-colors ${permissionBg(r.photo_permission)}`}
-                      title="לחץ לעדכון אישור צילום"
-                    >
-                      {r.photo_permission || 'לא הוגדר'}
-                    </button>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>

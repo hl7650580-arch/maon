@@ -4,20 +4,22 @@ import Link from 'next/link';
 import sql from '@/lib/db';
 import { formatDate, daysSince, daysColor, daysText } from '@/lib/utils';
 import PhotoQuickLog from './PhotoQuickLog';
+import PhotoPermissionSelect from './PhotoPermissionSelect';
 
 export default async function PhotosPage() {
   const residents = await sql`
     SELECT r.id, r.name, r.housing_group, r.employment_group,
+      r.photo_permission,
       MAX(p.published_date) as last_photo,
       COUNT(p.id) as total_photos
     FROM residents r
     LEFT JOIN photos p ON r.id = p.resident_id
     WHERE r.is_active = 1
-    GROUP BY r.id, r.name, r.housing_group, r.employment_group
+    GROUP BY r.id, r.name, r.housing_group, r.employment_group, r.photo_permission
     ORDER BY MAX(p.published_date) ASC NULLS FIRST, r.name ASC
   ` as {
     id: number; name: string; housing_group: string; employment_group: string;
-    last_photo: string | null; total_photos: number;
+    photo_permission: string | null; last_photo: string | null; total_photos: number;
   }[];
 
   const neverPublished = residents.filter((r) => !r.last_photo);
@@ -59,6 +61,7 @@ export default async function PhotosPage() {
               <th className="text-right px-4 py-3 font-medium text-gray-600">קבוצת דיור</th>
               <th className="text-right px-4 py-3 font-medium text-gray-600">תמונה אחרונה</th>
               <th className="text-center px-4 py-3 font-medium text-gray-600">מצב</th>
+              <th className="text-center px-4 py-3 font-medium text-gray-600">אישור צילום</th>
               <th className="text-center px-4 py-3 font-medium text-gray-600">סה&quot;כ פרסומים</th>
               <th className="text-center px-4 py-3 font-medium text-gray-600">פעולה מהירה</th>
             </tr>
@@ -81,6 +84,9 @@ export default async function PhotosPage() {
                     <span className={`text-xs px-2.5 py-1 rounded-full border ${daysColor(days, 30, 60)}`}>
                       {r.last_photo ? daysText(days) : 'לא פורסם'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <PhotoPermissionSelect residentId={r.id} initial={r.photo_permission} />
                   </td>
                   <td className="px-4 py-3 text-center text-gray-500">{r.total_photos}</td>
                   <td className="px-4 py-3 text-center">
