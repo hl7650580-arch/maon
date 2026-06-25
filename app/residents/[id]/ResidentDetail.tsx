@@ -62,7 +62,7 @@ export default function ResidentDetail({
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [openForm, setOpenForm] = useState<string | null>(null);
   const [editingGuardianId, setEditingGuardianId] = useState<number | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
   const trackingByType: Record<string, TrackingEvent[]> = {};
@@ -71,11 +71,15 @@ export default function ResidentDetail({
     trackingByType[t.event_type].push(t);
   }
 
-  function runAction(action: () => Promise<void>) {
-    startTransition(async () => {
+  async function runAction(action: () => Promise<void>) {
+    setIsPending(true);
+    try {
       await action();
       window.location.reload();
-    });
+    } catch (e: any) {
+      alert('שגיאה בשמירה: ' + (e?.message || e));
+      setIsPending(false);
+    }
   }
 
   const [uploadingFile, setUploadingFile] = useState(false);
