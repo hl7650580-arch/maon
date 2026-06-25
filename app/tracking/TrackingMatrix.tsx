@@ -191,9 +191,9 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
       )}
 
       {/* Matrix table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200 sticky top-12 md:top-0 z-20">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm" style={{overflow:'auto', maxHeight:'75vh'}}>
+        <table className="w-full text-sm" style={{minWidth:'700px'}}>
+          <thead className="bg-gray-50 border-b border-gray-200 z-20" style={{position:'sticky', top: 0}}>
             <tr>
               <th className="text-right px-4 py-3 font-medium text-gray-600 sticky right-0 bg-gray-50 z-30 border-l border-gray-200 min-w-36">
                 שם דייר
