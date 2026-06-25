@@ -92,7 +92,7 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
           throw new Error(d.error || `שגיאת שרת ${res.status}`);
         }
       }
-      window.location.reload();
+      window.location.href = '/tracking?t=' + Date.now();
     } catch (e: any) {
       alert('שגיאה בשמירה: ' + (e?.message || e));
       setIsPending(false);
