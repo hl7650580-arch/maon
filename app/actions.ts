@@ -288,3 +288,10 @@ export async function deleteFunctionalReport(id: number, residentId: number) {
   await sql`DELETE FROM functional_reports WHERE id = ${id}`;
   revalidatePath(`/residents/${residentId}`);
 }
+
+// ─── PHOTO PERMISSION ─────────────────────────────────────────────────────────
+
+export async function updatePhotoPermission(residentId: number, permission: string | null) {
+  await sql`UPDATE residents SET photo_permission = ${permission} WHERE id = ${residentId}`;
+  revalidatePath('/photos');
+}

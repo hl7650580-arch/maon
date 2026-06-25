@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { updatePhotoPermission } from '@/app/actions';
 
 const OPTIONS = ['פנימי', 'חיצוני', 'אין אישור', 'אישור מיוחד'];
 
@@ -22,22 +24,15 @@ export default function PhotoPermissionSelect({
   const [value, setValue] = useState(initial);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const router = useRouter();
 
   async function save(newVal: string) {
     setSaving(true);
     setEditing(false);
     try {
-      const res = await fetch(`/api/residents/${residentId}/photo-permission`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_permission: newVal || null }),
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        alert('שגיאה בשמירה: ' + (d.error || res.status));
-      } else {
-        setValue(newVal || null);
-      }
+      await updatePhotoPermission(residentId, newVal || null);
+      setValue(newVal || null);
+      router.refresh();
     } catch (e: any) {
       alert('שגיאה בשמירה: ' + e.message);
     } finally {
