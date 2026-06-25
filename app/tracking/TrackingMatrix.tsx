@@ -69,17 +69,28 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
   async function submitForm() {
     if (!openCell) return;
     setIsPending(true);
-    const fd = new FormData();
-    fd.append('event_date', eventDate);
-    fd.append('notes', notes);
-    fd.append('logged_by', loggedBy);
     try {
       if (openCell.col === 'photo') {
+        const fd = new FormData();
         fd.append('published_date', eventDate);
+        fd.append('notes', notes);
         await createPhoto(openCell.residentId, fd);
       } else {
-        fd.append('event_type', openCell.col);
-        await createTrackingEvent(openCell.residentId, fd);
+        const res = await fetch('/api/tracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            resident_id: openCell.residentId,
+            event_type: openCell.col,
+            event_date: eventDate,
+            notes,
+            logged_by: loggedBy,
+          }),
+        });
+        if (!res.ok) {
+          const d = await res.json();
+          throw new Error(d.error || `שגיאת שרת ${res.status}`);
+        }
       }
       window.location.reload();
     } catch (e: any) {
