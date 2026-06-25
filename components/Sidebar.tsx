@@ -43,7 +43,17 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-3 border-t border-blue-800 text-blue-500 text-xs text-center">v1.0</div>
+      <div className="p-3 border-t border-blue-800">
+        <button
+          onClick={async () => {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.href = '/login';
+          }}
+          className="w-full text-blue-300 hover:text-white text-xs text-center py-1.5 rounded hover:bg-blue-800 transition-colors"
+        >
+          יציאה מהמערכת
+        </button>
+      </div>
     </aside>
   );
 }

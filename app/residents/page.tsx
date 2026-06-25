@@ -1,26 +1,21 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
-import getDb from '@/lib/db';
+import sql from '@/lib/db';
 import { formatDate } from '@/lib/utils';
 
-function getResidents() {
-  const db = getDb();
-  return db.prepare(`
+export default async function ResidentsPage() {
+  const residents = await sql`
     SELECT r.*,
       (SELECT COUNT(*) FROM guardians WHERE resident_id = r.id) as guardian_count
     FROM residents r
     WHERE r.is_active = 1
     ORDER BY r.name
-  `).all() as {
+  ` as {
     id: number; name: string; id_number: string; birth_date: string;
     gender: string; housing_group: string; employment_group: string;
     health_fund: string; notes: string; guardian_count: number;
   }[];
-}
-
-export default function ResidentsPage() {
-  const residents = getResidents();
 
   return (
     <div>
@@ -29,10 +24,8 @@ export default function ResidentsPage() {
           <h1 className="text-2xl font-bold text-gray-800">דיירים</h1>
           <p className="text-gray-500 text-sm mt-0.5">{residents.length} דיירים פעילים</p>
         </div>
-        <Link
-          href="/residents/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
-        >
+        <Link href="/residents/new"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
           + הוסף דייר
         </Link>
       </div>
@@ -56,19 +49,14 @@ export default function ResidentsPage() {
               <tr>
                 <td colSpan={8} className="text-center py-12 text-gray-400">
                   אין דיירים רשומים.{' '}
-                  <Link href="/residents/new" className="text-blue-600 hover:underline">
-                    הוסף דייר ראשון
-                  </Link>
+                  <Link href="/residents/new" className="text-blue-600 hover:underline">הוסף דייר ראשון</Link>
                 </td>
               </tr>
             )}
             {residents.map((r) => (
               <tr key={r.id} className="hover:bg-blue-50 transition-colors">
                 <td className="px-4 py-2.5">
-                  <Link
-                    href={`/residents/${r.id}`}
-                    className="font-medium text-blue-700 hover:underline"
-                  >
+                  <Link href={`/residents/${r.id}`} className="font-medium text-blue-700 hover:underline">
                     {r.name}
                   </Link>
                   {r.notes && (
@@ -82,7 +70,7 @@ export default function ResidentsPage() {
                 <td className="px-3 py-2.5 text-gray-600">{r.employment_group || '—'}</td>
                 <td className="px-3 py-2.5 text-gray-600">{r.health_fund || '—'}</td>
                 <td className="px-3 py-2.5 text-center">
-                  {r.guardian_count > 0 ? (
+                  {Number(r.guardian_count) > 0 ? (
                     <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                       {r.guardian_count}
                     </span>

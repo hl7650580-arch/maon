@@ -21,7 +21,7 @@ interface Row {
 const COLUMNS = [
   { key: 'personal_plan',   label: 'תוכנית אישית',   warnAt: 270, alertAt: 365 },
   { key: 'team_meeting',    label: 'ישיבת צוות',      warnAt: 270, alertAt: 365 },
-  { key: 'risk_management', label: 'ניהול סיכונים',   warnAt: 60,  alertAt: 90  },
+  { key: 'risk_management', label: 'ניהול סיכונים',   warnAt: 270, alertAt: 365 },
   { key: 'conversation',    label: 'שיחה אישית',      warnAt: 21,  alertAt: 45  },
   { key: 'photo',           label: 'תמונה',            warnAt: 21,  alertAt: 45  },
 ] as const;

@@ -1,29 +1,24 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
-import getDb from '@/lib/db';
+import sql from '@/lib/db';
 import { formatDate, daysSince, daysColor, daysText } from '@/lib/utils';
 import PhotoQuickLog from './PhotoQuickLog';
 
-function getPhotosOverview() {
-  const db = getDb();
-  return db.prepare(`
+export default async function PhotosPage() {
+  const residents = await sql`
     SELECT r.id, r.name, r.housing_group, r.employment_group,
       MAX(p.published_date) as last_photo,
       COUNT(p.id) as total_photos
     FROM residents r
     LEFT JOIN photos p ON r.id = p.resident_id
     WHERE r.is_active = 1
-    GROUP BY r.id
-    ORDER BY last_photo ASC NULLS FIRST, r.name ASC
-  `).all() as {
+    GROUP BY r.id, r.name, r.housing_group, r.employment_group
+    ORDER BY MAX(p.published_date) ASC NULLS FIRST, r.name ASC
+  ` as {
     id: number; name: string; housing_group: string; employment_group: string;
     last_photo: string | null; total_photos: number;
   }[];
-}
-
-export default function PhotosPage() {
-  const residents = getPhotosOverview();
 
   const neverPublished = residents.filter((r) => !r.last_photo);
   const over60  = residents.filter((r) => r.last_photo && (daysSince(r.last_photo) ?? 0) > 60);
@@ -34,12 +29,9 @@ export default function PhotosPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">📸 מעקב פרסום תמונות</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          מטרה: לפרסם תמונה לכל דייר לפחות אחת ל-30 יום
-        </p>
+        <p className="text-gray-500 text-sm mt-1">מטרה: לפרסם תמונה לכל דייר לפחות אחת ל-30 יום</p>
       </div>
 
-      {/* Summary stats */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         <div className="bg-red-50 border border-red-200 rounded-xl p-4">
           <div className="text-3xl font-bold text-red-600">{neverPublished.length}</div>
@@ -59,7 +51,6 @@ export default function PhotosPage() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
@@ -68,7 +59,7 @@ export default function PhotosPage() {
               <th className="text-right px-4 py-3 font-medium text-gray-600">קבוצת דיור</th>
               <th className="text-right px-4 py-3 font-medium text-gray-600">תמונה אחרונה</th>
               <th className="text-center px-4 py-3 font-medium text-gray-600">מצב</th>
-              <th className="text-center px-4 py-3 font-medium text-gray-600">סה"כ פרסומים</th>
+              <th className="text-center px-4 py-3 font-medium text-gray-600">סה&quot;כ פרסומים</th>
               <th className="text-center px-4 py-3 font-medium text-gray-600">פעולה מהירה</th>
             </tr>
           </thead>

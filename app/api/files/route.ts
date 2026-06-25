@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
+import sql from '@/lib/db';
+import { randomUUID } from 'crypto';
 import path from 'path';
-import fs from 'fs';
-import getDb from '@/lib/db';
+
+const ALLOWED_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+];
+const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,21 +24,21 @@ export async function POST(request: NextRequest) {
     if (!file || !residentId) {
       return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 });
     }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: 'הקובץ גדול מדי (מקסימום 10MB)' }, { status: 400 });
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: 'סוג קובץ לא מורשה' }, { status: 400 });
+    }
 
     const ext = path.extname(file.name);
-    const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
-    const dir = path.join(process.cwd(), 'data', 'uploads', residentId);
+    const blobName = `residents/${residentId}/${randomUUID()}${ext}`;
+    const blob = await put(blobName, file, { access: 'public' });
 
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, filename), buffer);
-
-    const db = getDb();
-    db.prepare(
-      'INSERT INTO resident_files (resident_id, filename, original_name, category) VALUES (?, ?, ?, ?)'
-    ).run(parseInt(residentId), filename, file.name, category);
+    await sql`
+      INSERT INTO resident_files (resident_id, filename, original_name, category, blob_url)
+      VALUES (${parseInt(residentId)}, ${blobName}, ${file.name}, ${category}, ${blob.url})
+    `;
 
     return NextResponse.json({ success: true });
   } catch (err) {

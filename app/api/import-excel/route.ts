@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import getDb from '@/lib/db';
+import sql from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,19 +17,12 @@ export async function POST(request: NextRequest) {
 
     if (!rows.length) return NextResponse.json({ error: 'הקובץ ריק' }, { status: 400 });
 
-    const db = getDb();
-    const insert = db.prepare(`
-      INSERT INTO residents (name, id_number, birth_date, gender, housing_group, employment_group, health_fund, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
     const results = { added: 0, skipped: 0, errors: [] as string[] };
 
     for (const row of rows) {
       const name = String(row['שם מלא (חובה)'] ?? row['שם מלא'] ?? row['שם'] ?? '').trim();
       if (!name) { results.skipped++; continue; }
 
-      // Parse date - handle Excel date number or string
       let birthDate: string | null = null;
       const rawDate = row['תאריך לידה (YYYY-MM-DD)'] ?? row['תאריך לידה'];
       if (rawDate) {
@@ -44,16 +37,19 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        insert.run(
-          name,
-          String(row['תעודת זהות'] ?? '').trim() || null,
-          birthDate,
-          String(row['מין'] ?? '').trim() || null,
-          String(row['קבוצת דיור'] ?? '').trim() || null,
-          String(row['קבוצת תעסוקה'] ?? '').trim() || null,
-          String(row['קופת חולים'] ?? '').trim() || null,
-          String(row['הערות'] ?? '').trim() || null,
-        );
+        await sql`
+          INSERT INTO residents (name, id_number, birth_date, gender, housing_group, employment_group, health_fund, notes)
+          VALUES (
+            ${name},
+            ${String(row['תעודת זהות'] ?? '').trim() || null},
+            ${birthDate},
+            ${String(row['מין'] ?? '').trim() || null},
+            ${String(row['קבוצת דיור'] ?? '').trim() || null},
+            ${String(row['קבוצת תעסוקה'] ?? '').trim() || null},
+            ${String(row['קופת חולים'] ?? '').trim() || null},
+            ${String(row['הערות'] ?? '').trim() || null}
+          )
+        `;
         results.added++;
       } catch (e: unknown) {
         results.errors.push(`${name}: ${e instanceof Error ? e.message : String(e)}`);

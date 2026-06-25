@@ -1,30 +1,11 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
-import getDb from '@/lib/db';
+import sql from '@/lib/db';
 import { formatDate } from '@/lib/utils';
 
-function getDocuments() {
-  const db = getDb();
-  return db.prepare(`
-    SELECT d.*,
-      COUNT(dr.id)             as total,
-      SUM(dr.sent)             as sent_count,
-      SUM(dr.responded)        as responded_count,
-      SUM(dr.registered)       as registered_count
-    FROM group_documents d
-    LEFT JOIN document_recipients dr ON d.id = dr.document_id
-    GROUP BY d.id
-    ORDER BY d.created_at DESC
-  `).all() as {
-    id: number; title: string; description: string;
-    document_date: string; deadline: string; created_at: string;
-    total: number; sent_count: number; responded_count: number; registered_count: number;
-  }[];
-}
-
 function Progress({ value, total, color }: { value: number; total: number; color: string }) {
-  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  const pct = total > 0 ? Math.round((Number(value) / Number(total)) * 100) : 0;
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 bg-gray-100 rounded-full h-1.5">
@@ -35,8 +16,22 @@ function Progress({ value, total, color }: { value: number; total: number; color
   );
 }
 
-export default function DocumentsPage() {
-  const docs = getDocuments();
+export default async function DocumentsPage() {
+  const docs = await sql`
+    SELECT d.*,
+      COUNT(dr.id)             as total,
+      SUM(dr.sent)             as sent_count,
+      SUM(dr.responded)        as responded_count,
+      SUM(dr.registered)       as registered_count
+    FROM group_documents d
+    LEFT JOIN document_recipients dr ON d.id = dr.document_id
+    GROUP BY d.id, d.title, d.description, d.document_date, d.deadline, d.created_at
+    ORDER BY d.created_at DESC
+  ` as {
+    id: number; title: string; description: string;
+    document_date: string; deadline: string; created_at: string;
+    total: number; sent_count: number; responded_count: number; registered_count: number;
+  }[];
 
   return (
     <div>
@@ -45,10 +40,8 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-bold text-gray-800">📋 מסמכים לקבוצה</h1>
           <p className="text-gray-500 text-sm mt-1">מעקב שליחת מסמכים ורישום להורים</p>
         </div>
-        <Link
-          href="/documents/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
-        >
+        <Link href="/documents/new"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
           + מסמך חדש
         </Link>
       </div>
@@ -57,18 +50,13 @@ export default function DocumentsPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <div className="text-4xl mb-3">📋</div>
           <p className="text-gray-500 mb-4">אין מסמכים עדיין</p>
-          <Link href="/documents/new" className="text-blue-600 hover:underline text-sm">
-            צור מסמך ראשון
-          </Link>
+          <Link href="/documents/new" className="text-blue-600 hover:underline text-sm">צור מסמך ראשון</Link>
         </div>
       ) : (
         <div className="space-y-3">
           {docs.map((doc) => (
-            <Link
-              key={doc.id}
-              href={`/documents/${doc.id}`}
-              className="block bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all"
-            >
+            <Link key={doc.id} href={`/documents/${doc.id}`}
+              className="block bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h2 className="font-semibold text-gray-800">{doc.title}</h2>
@@ -81,8 +69,7 @@ export default function DocumentsPage() {
                   {doc.deadline && <div className="text-orange-600">דדליין: {formatDate(doc.deadline)}</div>}
                 </div>
               </div>
-
-              {doc.total > 0 && (
+              {Number(doc.total) > 0 && (
                 <div className="grid grid-cols-3 gap-4 mt-3">
                   <div>
                     <div className="text-xs text-gray-500 mb-1">נשלח</div>

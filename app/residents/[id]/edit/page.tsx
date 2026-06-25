@@ -1,16 +1,15 @@
 export const dynamic = 'force-dynamic';
 
 import { notFound } from 'next/navigation';
-import getDb from '@/lib/db';
+import sql from '@/lib/db';
 import EditForm from './EditForm';
 
-export default function EditResidentPage({ params }: { params: { id: string } }) {
-  const db = getDb();
+export default async function EditResidentPage({ params }: { params: { id: string } }) {
   const id = parseInt(params.id);
-  const resident = db.prepare('SELECT * FROM residents WHERE id = ? AND is_active = 1').get(id) as {
+  const [resident] = await sql`SELECT * FROM residents WHERE id = ${id}` as {
     id: number; name: string; id_number: string; birth_date: string; gender: string;
     housing_group: string; employment_group: string; health_fund: string; notes: string;
-  } | undefined;
+  }[];
 
   if (!resident) notFound();
 
