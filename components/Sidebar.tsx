@@ -12,6 +12,7 @@ const nav = [
   { href: '/photos',    label: 'מעקב תמונות',    emoji: '📸' },
   { href: '/documents', label: 'מסמכים לקבוצה', emoji: '📋' },
   { href: '/import',    label: 'ייבוא מאקסל',    emoji: '📥' },
+  { href: '/settings',  label: 'הגדרות',          emoji: '⚙️' },
 ];
 
 export default function Sidebar() {
