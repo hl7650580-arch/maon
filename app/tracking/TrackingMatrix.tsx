@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createTrackingEvent, createPhoto } from '@/app/actions';
@@ -49,11 +49,42 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
   const [notes, setNotes] = useState('');
   const [filterGroup, setFilterGroup] = useState('');
   const [isPending, setIsPending] = useState(false);
+  const [sortKey, setSortKey] = useState<string>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const router = useRouter();
+
+  function toggleSort(key: string) {
+    if (key === sortKey) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  }
+  function sortIcon(key: string) {
+    if (key !== sortKey) return ' ↕';
+    return sortDir === 'asc' ? ' ↑' : ' ↓';
+  }
+  function thCls(key: string) {
+    return key === sortKey
+      ? 'text-blue-600 cursor-pointer select-none'
+      : 'cursor-pointer select-none hover:text-gray-800';
+  }
 
   const groups = Array.from(new Set(rows.map((r) => r.housing_group).filter(Boolean))).sort();
 
-  const filtered = filterGroup ? rows.filter((r) => r.housing_group === filterGroup) : rows;
+  const base = filterGroup ? rows.filter((r) => r.housing_group === filterGroup) : rows;
+
+  const filtered = useMemo(() => {
+    return [...base].sort((a, b) => {
+      let av: any, bv: any;
+      if (COLUMNS.find((c) => c.key === sortKey)) {
+        av = daysSince((a as any)[sortKey]) ?? 9999;
+        bv = daysSince((b as any)[sortKey]) ?? 9999;
+      } else {
+        av = (a as any)[sortKey] ?? '';
+        bv = (b as any)[sortKey] ?? '';
+      }
+      const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv), 'he');
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [base, sortKey, sortDir]);
 
   function openForm(residentId: number, col: ColKey) {
     setOpenCell({ residentId, col });
@@ -207,13 +238,18 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
         <table className="w-full text-sm" style={{minWidth:'700px'}}>
           <thead className="bg-gray-50 border-b border-gray-200 z-20" style={{position:'sticky', top: 0}}>
             <tr>
-              <th className="text-right px-4 py-3 font-medium text-gray-600 sticky right-0 bg-gray-50 z-30 border-l border-gray-200 min-w-36">
-                שם דייר
+              <th onClick={() => toggleSort('name')}
+                className={`text-right px-4 py-3 font-medium text-gray-600 sticky right-0 bg-gray-50 z-30 border-l border-gray-200 min-w-36 ${thCls('name')}`}>
+                שם דייר{sortIcon('name')}
               </th>
-              <th className="text-right px-3 py-3 font-medium text-gray-500 min-w-24 bg-gray-50">קבוצה</th>
+              <th onClick={() => toggleSort('housing_group')}
+                className={`text-right px-3 py-3 font-medium text-gray-500 min-w-24 bg-gray-50 ${thCls('housing_group')}`}>
+                קבוצה{sortIcon('housing_group')}
+              </th>
               {COLUMNS.map((col) => (
-                <th key={col.key} className="text-center px-3 py-3 font-medium text-gray-600 min-w-28 bg-gray-50">
-                  {col.label}
+                <th key={col.key} onClick={() => toggleSort(col.key)}
+                  className={`text-center px-3 py-3 font-medium text-gray-600 min-w-28 bg-gray-50 ${thCls(col.key)}`}>
+                  {col.label}{sortIcon(col.key)}
                 </th>
               ))}
             </tr>
