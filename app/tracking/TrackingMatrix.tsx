@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createTrackingEvent, createPhoto } from '@/app/actions';
@@ -48,7 +48,7 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
   const [eventDate, setEventDate] = useState(todayStr());
   const [notes, setNotes] = useState('');
   const [filterGroup, setFilterGroup] = useState('');
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
   const groups = Array.from(new Set(rows.map((r) => r.housing_group).filter(Boolean))).sort();
@@ -66,14 +66,14 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
     setNotes('');
   }
 
-  function submitForm() {
+  async function submitForm() {
     if (!openCell) return;
+    setIsPending(true);
     const fd = new FormData();
     fd.append('event_date', eventDate);
     fd.append('notes', notes);
     fd.append('logged_by', loggedBy);
-
-    startTransition(async () => {
+    try {
       if (openCell.col === 'photo') {
         fd.append('published_date', eventDate);
         await createPhoto(openCell.residentId, fd);
@@ -81,9 +81,11 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
         fd.append('event_type', openCell.col);
         await createTrackingEvent(openCell.residentId, fd);
       }
-      closeForm();
-      router.refresh();
-    });
+      window.location.reload();
+    } catch (e: any) {
+      alert('שגיאה בשמירה: ' + (e?.message || e));
+      setIsPending(false);
+    }
   }
 
   // Stats for the summary row
@@ -191,14 +193,14 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
       {/* Matrix table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-20">
             <tr>
-              <th className="text-right px-4 py-3 font-medium text-gray-600 sticky right-0 bg-gray-50 z-10 border-l border-gray-200 min-w-36">
+              <th className="text-right px-4 py-3 font-medium text-gray-600 sticky right-0 bg-gray-50 z-30 border-l border-gray-200 min-w-36">
                 שם דייר
               </th>
-              <th className="text-right px-3 py-3 font-medium text-gray-500 min-w-24">קבוצה</th>
+              <th className="text-right px-3 py-3 font-medium text-gray-500 min-w-24 bg-gray-50">קבוצה</th>
               {COLUMNS.map((col) => (
-                <th key={col.key} className="text-center px-3 py-3 font-medium text-gray-600 min-w-28">
+                <th key={col.key} className="text-center px-3 py-3 font-medium text-gray-600 min-w-28 bg-gray-50">
                   {col.label}
                 </th>
               ))}
