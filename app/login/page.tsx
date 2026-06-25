@@ -15,17 +15,23 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (res.ok) {
-      window.location.href = '/';
-    } else {
-      const data = await res.json();
-      setError(data.error || 'שגיאה בהתחברות');
+      if (res.ok) {
+        window.location.href = '/';
+      } else {
+        let msg = 'שגיאה בהתחברות';
+        try { const d = await res.json(); msg = d.error || msg; } catch {}
+        setError(msg + ` (${res.status})`);
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('שגיאת רשת — נסה שוב');
       setLoading(false);
     }
   }
