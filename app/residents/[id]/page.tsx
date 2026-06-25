@@ -4,17 +4,29 @@ import { notFound } from 'next/navigation';
 import sql from '@/lib/db';
 import ResidentDetail from './ResidentDetail';
 
+function str(v: any): string { return v == null ? '' : String(v); }
+
 export default async function ResidentPage({ params }: { params: { id: string } }) {
   const id = parseInt(params.id);
 
   const rows = await sql`SELECT * FROM residents WHERE id = ${id}`;
-  const resident = rows[0] as {
-    id: number; name: string; id_number: string; birth_date: string; gender: string;
-    housing_group: string; employment_group: string; health_fund: string; notes: string;
-    is_active: number; created_at: string; updated_at: string;
-  } | undefined;
+  if (!rows[0]) notFound();
 
-  if (!resident) notFound();
+  const r0 = rows[0] as any;
+  const resident = {
+    id: r0.id as number,
+    name: str(r0.name),
+    id_number: str(r0.id_number),
+    birth_date: str(r0.birth_date),
+    gender: str(r0.gender),
+    housing_group: str(r0.housing_group),
+    employment_group: str(r0.employment_group),
+    health_fund: str(r0.health_fund),
+    notes: str(r0.notes),
+    is_active: r0.is_active as number,
+    created_at: str(r0.created_at),
+    updated_at: str(r0.updated_at),
+  };
 
   const [guardians, tracking, photos, files, familyCalls, socialWorkerMeetings, functionalReports] = await Promise.all([
     sql`SELECT * FROM guardians WHERE resident_id = ${id} ORDER BY id`,
@@ -26,16 +38,22 @@ export default async function ResidentPage({ params }: { params: { id: string } 
     sql`SELECT * FROM functional_reports WHERE resident_id = ${id} ORDER BY written_date DESC, id DESC`,
   ]);
 
+  function mapRow(row: any) {
+    const out: any = {};
+    for (const k of Object.keys(row)) out[k] = row[k] instanceof Date ? row[k].toISOString() : row[k];
+    return out;
+  }
+
   return (
     <ResidentDetail
       resident={resident}
-      guardians={guardians as { id: number; name: string; relationship: string; phone: string; email: string; address: string; notes: string }[]}
-      tracking={tracking as { id: number; event_type: string; event_date: string; notes: string; logged_by: string; created_at: string }[]}
-      photos={photos as { id: number; published_date: string; notes: string; created_at: string }[]}
-      files={files as { id: number; filename: string; original_name: string; category: string; uploaded_at: string }[]}
-      familyCalls={familyCalls as { id: number; call_date: string; call_time: string | null; notes: string | null; logged_by: string | null; created_at: string }[]}
-      socialWorkerMeetings={socialWorkerMeetings as { id: number; meeting_date: string; meeting_time: string | null; notes: string | null; logged_by: string | null; created_at: string }[]}
-      functionalReports={functionalReports as { id: number; written_date: string; sent_date: string | null; sent_to: string | null; notes: string | null; created_at: string }[]}
+      guardians={(guardians as any[]).map(mapRow)}
+      tracking={(tracking as any[]).map(mapRow)}
+      photos={(photos as any[]).map(mapRow)}
+      files={(files as any[]).map(mapRow)}
+      familyCalls={(familyCalls as any[]).map(mapRow)}
+      socialWorkerMeetings={(socialWorkerMeetings as any[]).map(mapRow)}
+      functionalReports={(functionalReports as any[]).map(mapRow)}
     />
   );
 }
