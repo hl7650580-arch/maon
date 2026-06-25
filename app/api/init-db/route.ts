@@ -47,6 +47,8 @@ async function run() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`;
 
+    await sql`ALTER TABLE residents ADD COLUMN IF NOT EXISTS photo_permission TEXT`;
+
     return NextResponse.json({ ok: true, message: 'כל הטבלאות נוצרו בהצלחה' });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
