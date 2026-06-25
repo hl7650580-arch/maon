@@ -93,7 +93,7 @@ export default function TrackingMatrix({ rows }: { rows: Row[] }) {
         }
       }
       closeForm();
-      window.location.href = '/tracking?t=' + Date.now();
+      router.refresh();
     } catch (e: any) {
       alert('שגיאה בשמירה: ' + (e?.message || e));
       setIsPending(false);

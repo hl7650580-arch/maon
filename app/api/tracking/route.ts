@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import sql from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -14,6 +15,9 @@ export async function POST(request: NextRequest) {
       INSERT INTO tracking_events (resident_id, event_type, event_date, notes, logged_by)
       VALUES (${resident_id}, ${event_type}, ${event_date}, ${notes || null}, ${logged_by || null})
     `;
+
+    revalidatePath('/tracking');
+    revalidatePath('/');
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
