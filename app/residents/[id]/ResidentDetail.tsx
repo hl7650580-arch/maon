@@ -74,7 +74,7 @@ export default function ResidentDetail({
   function runAction(action: () => Promise<void>) {
     startTransition(async () => {
       await action();
-      router.refresh();
+      window.location.reload();
     });
   }
 
