@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 
-const OPTIONS = ['פנימי', 'חיצוני', 'אין אישור'];
+const OPTIONS = ['פנימי', 'חיצוני', 'אין אישור', 'אישור מיוחד'];
 
 function badge(val: string | null) {
-  if (val === 'פנימי')     return 'bg-blue-100 text-blue-700 border-blue-200';
-  if (val === 'חיצוני')    return 'bg-green-100 text-green-700 border-green-200';
-  if (val === 'אין אישור') return 'bg-red-100 text-red-700 border-red-200';
+  if (val === 'פנימי')        return 'bg-blue-100 text-blue-700 border-blue-200';
+  if (val === 'חיצוני')       return 'bg-green-100 text-green-700 border-green-200';
+  if (val === 'אין אישור')    return 'bg-red-100 text-red-700 border-red-200';
+  if (val === 'אישור מיוחד') return 'bg-purple-100 text-purple-700 border-purple-200';
   return 'bg-gray-100 text-gray-400 border-gray-200';
 }
 
@@ -25,13 +26,23 @@ export default function PhotoPermissionSelect({
   async function save(newVal: string) {
     setSaving(true);
     setEditing(false);
-    await fetch(`/api/residents/${residentId}/photo-permission`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ photo_permission: newVal || null }),
-    });
-    setValue(newVal || null);
-    setSaving(false);
+    try {
+      const res = await fetch(`/api/residents/${residentId}/photo-permission`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_permission: newVal || null }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        alert('שגיאה בשמירה: ' + (d.error || res.status));
+      } else {
+        setValue(newVal || null);
+      }
+    } catch (e: any) {
+      alert('שגיאה בשמירה: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (editing) {
@@ -56,7 +67,7 @@ export default function PhotoPermissionSelect({
       className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${badge(value)}`}
       title="לחץ לשינוי"
     >
-      {saving ? '...' : (value || 'לא הוגדר')}
+      {saving ? 'שומר...' : (value || 'לא הוגדר')}
     </button>
   );
 }
