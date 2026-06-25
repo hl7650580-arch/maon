@@ -3,7 +3,15 @@ import './globals.css';
 import Sidebar from '@/components/Sidebar';
 
 export const metadata: Metadata = {
-  title: 'מערכת מעון - מעקב דיירים',
+  title: 'מערכת מעון',
+  description: 'מערכת ניהול ומעקב דיירים',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'מערכת מעון',
+  },
+  formatDetection: { telephone: false },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
