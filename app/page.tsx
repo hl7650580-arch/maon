@@ -15,7 +15,7 @@ async function getDashboardData() {
     LEFT JOIN photos p ON r.id = p.resident_id
     WHERE r.is_active = 1
     GROUP BY r.id, r.name
-    HAVING MAX(p.published_date) IS NULL OR MAX(p.published_date) < CURRENT_DATE - INTERVAL '30 days'
+    HAVING MAX(p.published_date) IS NULL OR MAX(p.published_date::date) < CURRENT_DATE - INTERVAL '30 days'
     ORDER BY MAX(p.published_date) ASC NULLS FIRST
   ` as { id: number; name: string; last_photo: string | null }[];
 
@@ -46,7 +46,7 @@ async function getDashboardData() {
     LEFT JOIN family_calls fc ON r.id = fc.resident_id
     WHERE r.is_active = 1
     GROUP BY r.id, r.name
-    HAVING MAX(fc.call_date) IS NULL OR MAX(fc.call_date) < CURRENT_DATE - INTERVAL '30 days'
+    HAVING MAX(fc.call_date) IS NULL OR MAX(fc.call_date::date) < CURRENT_DATE - INTERVAL '30 days'
     ORDER BY MAX(fc.call_date) ASC NULLS FIRST
   ` as { id: number; name: string; last_call: string | null }[];
 
@@ -56,7 +56,7 @@ async function getDashboardData() {
     LEFT JOIN social_worker_meetings sm ON r.id = sm.resident_id
     WHERE r.is_active = 1
     GROUP BY r.id, r.name
-    HAVING MAX(sm.meeting_date) IS NULL OR MAX(sm.meeting_date) < CURRENT_DATE - INTERVAL '90 days'
+    HAVING MAX(sm.meeting_date) IS NULL OR MAX(sm.meeting_date::date) < CURRENT_DATE - INTERVAL '90 days'
     ORDER BY MAX(sm.meeting_date) ASC NULLS FIRST
   ` as { id: number; name: string; last_meeting: string | null }[];
 
